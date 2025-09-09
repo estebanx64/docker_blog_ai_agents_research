@@ -1,0 +1,4 @@
+entity_type,identifier,name,context_tags
+compound,CCO,ethanol,hepatotoxicity
+protein,P00533,EGFR,breast cancer
+compound,C1=CC=CC=C1,benzene,carcinogenicity

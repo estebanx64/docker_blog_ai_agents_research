@@ -1,0 +1,60 @@
+task_load:
+  description: >
+    Load the CSV file at `{input_csv}` and return JSON rows.
+  expected_output: >
+    A JSON object with a 'rows' array of dicts.
+  agent: curator
+  #tools: [load_csv]
+
+task_normalize:
+  description: >
+    Normalize the rows to standard IDs; output a JSON list of NormalizedEntity.
+  expected_output: >
+    JSON list of NormalizedEntity objects.
+  agent: curator
+  # tools: [normalize_entities]
+  context:
+    - task_load
+
+task_lit:
+  description: >
+    Use the output from the task_normalize task, which is a JSON string of normalized entities, to fetch up to 3 PubMed refs per entity based on ID/name and context tags; return bundles. The input should be the JSON string from the previous task.
+  expected_output: >
+    JSON list of LiteratureBundle objects.
+  agent: researcher
+  # tools: [fetch_pubmed]
+  context:
+    - task_normalize
+
+task_web_scrapper:
+  description: >
+    Take the url from references of every LiteratureBundle object and browse to the page and Extract the abstract content from the page. Use the class tag 'abstract-content selected' to identify it
+  expected_output: >
+    Verified and valid JSON list of LitWebSummaries objects.
+  agent: web_scraper
+  context:
+    - task_lit
+
+task_admet:
+  description: >
+    Predict demo ADMET/toxicity endpoints for each normalized entity.
+  expected_output: >
+    JSON list of ADMETPrediction objects.
+  agent: analyst
+  # tools: [predict_admet]
+  context:
+    - task_normalize
+
+task_report:
+  description: >
+    Compile a Markdown report that includes all entities, literature summaries,
+    include the urls from pubmed literature key citations and ADMET outputs. The input file path is `{input_csv}`.
+  expected_output: >
+    A file path to the generated Markdown report.
+  agent: reporter
+  # tools: [compile_report]
+  context:
+    - task_normalize
+    - task_web_scrapper
+    - task_lit
+    - task_admet
